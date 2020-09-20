@@ -6,17 +6,41 @@ $(document).ready(function () {
         type: null,
         price: null,
         installationFeePercentage: null
+        
     };
 
+    //On touche pas
     $('.formField').on('keyup', function () {
         doCalc();
     });
 
 
-    $('#standart, #premium, #excelium').on('click', function () {
+    //Correction, standard avec (d) à la fin et non avec (t). On doit aussi appeler les autres variables elevPriceUnit en fonction du bouton radio
+    $('#standard').on('click', function() {
+
+
         document.getElementById('elevPriceUnit').value = (7565).toFixed(2) + " $";
         doCalc();
     });
+
+    $('#premium').on('click', function () {
+
+
+        document.getElementById('elevPriceUnit').value = (12345).toFixed(2) + " $";
+        doCalc();
+    });
+
+
+    $('#excelium').on('click', function () {
+
+
+        document.getElementById('elevPriceUnit').value = (15400).toFixed(2) + " $";
+        doCalc();
+    });
+    // fin de la correction 2
+
+
+    //On touche pas
 
     $('#residential, #commercial, #corporate, #hybrid').on('click', function () {
         initialize();
@@ -28,6 +52,8 @@ $(document).ready(function () {
         $('.productRangeBtn').prop('checked', false);
     };
 
+
+    // l'erreure ici c'est que la value a l'interieur n'est jamais lu.
     function getInfoNumApp() {
         numApp = $('#numApp').val();
     };
@@ -55,9 +81,11 @@ $(document).ready(function () {
             prodRange.installationFeePercentage = 0.1;
             return prodRange;
 
+
+            //il y'a une erreure ici, il y'a un 6 de trop.
         } else if ($('#premium').is(':checked')) {
             prodRange.type = "premium";
-            prodRange.price = parseFloat(123456);
+            prodRange.price = parseFloat(12345);
             prodRange.installationFeePercentage = 0.13;
             return prodRange;
 
@@ -68,13 +96,15 @@ $(document).ready(function () {
             return prodRange;
         } else {
             prodRange.type = null,
-            prodRange.price = null,
-            prodRange.installationFeePercentage = null
+                prodRange.price = null,
+                prodRange.installationFeePercentage = null
             return prodRange;
         }
     };
 
     function GetInfos() {
+        //Etant donné que la valeur de la fonction getInfoNumApp n'est jamais lu en haut, on doit l'appeler ici
+        getInfoNumApp();
         getInfoNumFloors();
         getInfoNumBase();
         getInfoNumElev();
@@ -86,7 +116,9 @@ $(document).ready(function () {
         $("#numElev_2, #numElev_3").val(parseFloat(finNumElev));
     };
 
+    //finNumElev n'est pas appeler ici dans la fonction, j'ai rajouter $("#numElev_2, #numElev_3").val(parseFloat(finNumElev));
     function setPricesResults(finNumElev, roughTotal, installFee, total) {
+        $("#numElev_2, #numElev_3").val(parseFloat(finNumElev));
         $("#elevTotal").val(parseFloat(roughTotal).toFixed(2) + " $");
         $("#installationFee").val(parseFloat(installFee).toFixed(2) + " $");
         $("#total_").val(parseFloat(total).toFixed(2) + " $");
@@ -94,17 +126,25 @@ $(document).ready(function () {
 
     function emptyElevatorsNumberAndPricesFields() {
         $('#numElev_3').val('');
+        //faut que les deux inputs sur le nombre d'elevateur se renitialise.
+        $('#numElev_2').val('');
+
         $('.priceField').val('');
+
+        //Faut que le unit price disparait aussi lorsqu'on arrete de mettre des données.
+        $('#elevPriceUnit').val('');
     };
 
     function createFormData(projectType) {
         return {
+            // ici on doit ajouter numberElev qu'on a oublier d'appeler et en ajouter une , a projectype
             numberApp: numApp,
             numberFloors: numFloors,
             numberBase: numBase,
             maximumOcc: maxOcc,
             productRange: prodRange,
-            projectType: projectType
+            projectType: projectType,
+            numberElev : numElev
         }
     };
 
@@ -150,7 +190,14 @@ $(document).ready(function () {
             alert("Please enter a positive number!");
             $('#maxOcc').val('');
             return true
-        } else {
+       // le nombre de floor aussi doit etre positif 
+        } else if ($('#numFloors').val() < 0) {
+
+            alert("Please enter a positive number!");
+            $('#numFloors').val('');
+            return true
+        } 
+        else {
             return false
         }
     };
@@ -177,14 +224,27 @@ $(document).ready(function () {
             }
         });
     }
+
+
     
     function doCalc() {
+        
         if ($('#residential').hasClass('active') && !negativeValues() && $('#numApp').val() && $('#numFloors').val()) {
-            apiCall('residential')
-        } else if ($('#commercial').hasClass('active') && !negativeValues() && $('#numElev').val()  && $('#numPark').val()) {
-            apiCall('commercial')
+            apiCall('residential');
+            // On enleve le nombre de parking qu'on a pas besoin dans le commerciale étant donnée que c'est pas un critère.
+        } else if ($('#commercial').hasClass('active') && !negativeValues() && $('#numElev').val()) {
+            apiCall('commercial');
+           
+            //Ici l'erreur, c'est qu'on appel en apiCall le commercial, alors qu'on doit appeler corporate à la place.
         } else if ($('#corporate').hasClass('active') && !negativeValues() && $('#numFloors').val() && $('#numBase').val() && $('#maxOcc').val()) {
-            apiCall('commercial')
+            apiCall('corporate');
+            
+            
+            // On doit aussi appeler a faire le calcul concerant l'hybrid sinon il ne le fera pas
+
+        } else if ($('#hybrid').hasClass('active') && !negativeValues() && $('#numFloors').val() && $('#numBase').val() && $('#maxOcc').val()) {
+            apiCall('hybrid');
+            
         } else {
             emptyElevatorsNumberAndPricesFields();
         };
